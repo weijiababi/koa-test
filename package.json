@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "cd src && nodemon index.js"
+    "start": "set DEBUG = * && cd src && nodemon index.js"
   },
   "author": "",
   "license": "ISC",
@@ -13,10 +13,14 @@
     "babel": "^6.23.0",
     "babel-polyfill": "^6.26.0",
     "babel-register": "^6.26.0",
+    "debug": "^4.1.1",
     "kcors": "^2.2.2",
     "koa": "^2.6.2",
     "koa-bodyparser": "^4.2.1",
+    "koa-mysql-session": "0.0.2",
     "koa-router": "^7.4.0",
+    "koa-session-minimal": "^3.0.4",
+    "md5": "^2.2.1",
     "mysql": "^2.16.0",
     "nodemon": "^1.18.9"
   }

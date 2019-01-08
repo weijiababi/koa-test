@@ -1,5 +1,6 @@
 const userModel = require('../lib/mysql')
 const mixin = require('../lib/mixin')
+const md5 = require('md5')
 
 const success = { code: 200, msg: 'success' }
 const notFound = { code: 500, msg: 'not found' }
@@ -18,19 +19,29 @@ async function checkUser(id) {
 
 exports.getUser = async ctx => {
   let { id } = ctx.request.body
-  await checkUser(id)
-    .then(async exist => {
+  try {
+    await checkUser(id).then(async exist => {
       if (!exist) {
-        throw new Error()
+        throw new Error(500)
       }
+      return Promise.resolve()
+    })
 
-      await userModel.getUser(id).then(res => {
-        ctx.body = Object.assign(success, { data: res[0] })
-      })
+    await userModel.getUser(id).then(res => {
+      if (!res) {
+        throw new Error(404)
+      }
+      ctx.body = Object.assign(success, { data: res[0] })
     })
-    .catch(() => {
-      ctx.body = notFound
-    })
+  } catch (err) {
+    switch (err.message) {
+      case '404':
+        ctx.body = fail
+        break
+      case '500':
+        ctx.body = notFound
+    }
+  }
 }
 
 exports.getUserList = async ctx => {
@@ -50,37 +61,62 @@ exports.getUserList = async ctx => {
 
 exports.login = async ctx => {
   let { name, password } = ctx.request.body
-
-  await userModel
-    .login([name, password])
-    .then(res => {
-      if (!res.length || res.length !== 0) {
-        throw new Error()
+  try {
+    await userModel.login([name, password]).then(res => {
+      if (res.length === 0) {
+        throw new Error(404)
       }
-      ctx.body = success
+      const session = md5(
+        Math.random()
+          .toString(36)
+          .substr(2) + name
+      )
+      ctx.body = Object.assign(success, {
+        data: {
+          session
+        }
+      })
     })
-    .catch(() => {
-      ctx.body = notFound
-    })
+  } catch (err) {
+    switch (err.message) {
+      case '404':
+        ctx.body = fail
+        break
+    }
+  }
 }
 
 exports.register = async ctx => {
   let { name, password, phone } = ctx.request.body
-
-  await userModel
-    .register([name, password, phone])
-    .then(res => {
+  try {
+    //查找是否有相同用户
+    await userModel.findUserCount([name, phone]).then(async res => {
+      if (res[0].count >= 1) {
+        throw new Error(10001)
+      }
+      return Promise.resolve()
+    })
+    //进行注册操作
+    await userModel.register([name, password, phone]).then(res => {
       if (!res) {
-        throw new Error()
+        throw new Error(404)
       }
       ctx.body = success
     })
-    .catch(() => {
-      ctx.body = {
-        code: 10001,
-        msg: 'had the same userInfo'
-      }
-    })
+  } catch (err) {
+    //抓取error中的code
+    switch (err.message) {
+      case '404':
+        ctx.body = fail
+        break
+      case '10001':
+        ctx.body = {
+          code: 10001,
+          msg: 'has one more same user'
+        }
+        break
+    }
+  }
 }
 
 exports.resetUser = async ctx => {

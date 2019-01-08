@@ -40,6 +40,10 @@ exports.checkUser = async id => {
   let _sql = `select count(*) as count from user where id=${id}`
   return query(_sql)
 }
+exports.findUserCount = async values => {
+  let _sql = `select count(*) as count from user where name=? or phone=?`
+  return query(_sql, values)
+}
 exports.getUserList = async () => {
   let _sql = 'select * from user'
   return query(_sql)
@@ -49,13 +53,6 @@ exports.login = async user => {
   return query(_sql, user)
 }
 exports.register = async user => {
-  let [name, password, phone] = user
-  let _checkSql = 'select * from user where name=? or phone=?'
-  let result = await query(_checkSql, [name, phone])
-  if (result.length > 0) {
-    return false
-  }
-
   let _sql = 'insert into user set name=?, password=?, phone=?'
   return query(_sql, user)
 }
