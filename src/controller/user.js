@@ -40,6 +40,7 @@ exports.getUser = async ctx => {
         break
       case '500':
         ctx.body = notFound
+        break
     }
   }
 }
@@ -121,17 +122,26 @@ exports.register = async ctx => {
 
 exports.resetUser = async ctx => {
   let { id, name, password, phone } = ctx.request.body
-  await checkUser(id)
-    .then(async exist => {
+  try {
+    await checkUser(id).then(async exist => {
       if (!exist) {
-        throw new Error()
+        throw new Error(500)
       }
-
-      await userModel.resetUser([name, password, phone, id]).then(() => {
-        ctx.body = success
-      })
     })
-    .catch(() => {
-      ctx.body = notFound
+    await userModel.resetUser([name, password, phone, id]).then(res => {
+      if (!res) {
+        throw new Error(404)
+      }
+      ctx.body = success
     })
+  } catch (err) {
+    switch (err.message) {
+      case '404':
+        ctx.body = fail
+        break
+      case '500':
+        ctx.body = notFound
+        break
+    }
+  }
 }
