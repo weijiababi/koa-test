@@ -24,6 +24,44 @@ app.use(
   })
 )
 
+//数据session
+let store = new mySqlStore({
+  user: config.database.USERNAME,
+  password: config.database.PASSWORD,
+  database: config.database.DATABASE,
+  host: config.database.HOST
+})
+
+let cookie = {
+  domain: 'http://localhost:8888', // 写cookie所在的域名
+  httpOnly: false, // 是否只用于http请求中获取
+  overwrite: true // 是否允许重写
+}
+
+app.use(
+  session({
+    key: 'session_id',
+    store,
+    cookie
+  })
+)
+app.use(async ctx => {
+  // 设置session
+  if (ctx.url === '/set') {
+    ctx.session = {
+      user_id: Math.random()
+        .toString(36)
+        .substr(2),
+      count: 0
+    }
+    ctx.body = ctx.session
+  } else if (ctx.url === '/') {
+    // 读取session信息
+    ctx.session.count = ctx.session.count + 1
+    ctx.body = ctx.session
+  }
+})
+
 //static
 app.use(koaStatic(path.join(__dirname, './static/images')))
 //http://localhost:8888/exh1.jpg 可以在地址栏输入这个测试
